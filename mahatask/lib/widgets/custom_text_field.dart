@@ -22,12 +22,21 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final hintColor = isDark ? Colors.white38 : const Color(0xFF64748B);
+    final fillColor = isDark
+        ? Colors.white.withOpacity(0.05)
+        : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? Colors.white24 : const Color(0xFFD1D9E6);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: labelColor, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -35,17 +44,17 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           enabled: enabled,
           obscureText: isPassword,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: textColor),
           decoration: InputDecoration(
             hintText: hint,
             errorText: errorText,
-            hintStyle: const TextStyle(color: Colors.white38),
+            hintStyle: TextStyle(color: hintColor),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: fillColor,
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.white24),
+              borderSide: BorderSide(color: borderColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

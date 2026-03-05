@@ -21,17 +21,25 @@ class CustomBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? const Color(0xFF171717) : Colors.white;
+    final activeBg = isDark ? Colors.cyanAccent.withOpacity(0.12) : Theme.of(context).colorScheme.primary.withOpacity(0.12);
+    final activeIcon = Theme.of(context).colorScheme.primary;
+    final inactiveIcon = isDark ? Colors.white54 : Colors.black45;
+    final activeText = isDark ? Colors.white : const Color(0xFF0F172A);
+    final inactiveText = isDark ? Colors.white38 : Colors.black45;
+    final shadow = isDark ? const Color(0x40000000) : const Color(0x14000000);
     return SafeArea(
       top: false,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF171717),
+          color: containerColor,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x40000000),
+              color: shadow,
               blurRadius: 24,
               offset: Offset(0, 10),
             ),
@@ -50,7 +58,7 @@ class CustomBottomNav extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: isActive ? Colors.cyanAccent.withOpacity(0.12) : Colors.transparent,
+                    color: isActive ? activeBg : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -62,7 +70,7 @@ class CustomBottomNav extends StatelessWidget {
                         scale: isActive ? 1.07 : 1,
                         child: Icon(
                           item.icon,
-                          color: isActive ? Colors.cyanAccent : Colors.white54,
+                          color: isActive ? activeIcon : inactiveIcon,
                           size: 23,
                         ),
                       ),
@@ -84,7 +92,7 @@ class CustomBottomNav extends StatelessWidget {
                       Text(
                         item.label,
                         style: TextStyle(
-                          color: isActive ? Colors.white : Colors.white38,
+                          color: isActive ? activeText : inactiveText,
                           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                           fontSize: 11,
                         ),

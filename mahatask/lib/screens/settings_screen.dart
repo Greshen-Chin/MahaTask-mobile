@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../services/auth_provider.dart';
 import '../services/session_store.dart';
+import '../services/theme_provider.dart';
 import '../services/unread_provider.dart';
 
 enum _SettingsSection { profile, account, appearance, notifications }
@@ -19,7 +20,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _marketingEmail = false;
   bool _socialEmail = false;
   bool _securityEmail = true;
-  String _themeMode = 'Dark';
   final TextEditingController _nameController = TextEditingController(text: SessionStore.user?.name ?? '');
   final TextEditingController _bioController = TextEditingController(text: SessionStore.user?.bio ?? '');
 
@@ -33,30 +33,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final unread = context.watch<UnreadProvider>().totalUnread;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panel = isDark ? const Color(0xFF111111) : Colors.white;
+    final muted = isDark ? Colors.white38 : Colors.black54;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
           child: Column(
             children: [
-              _menuTile(_SettingsSection.profile, Icons.person_outline, 'Profile'),
-              _menuTile(_SettingsSection.account, Icons.settings_outlined, 'Account'),
-              _menuTile(_SettingsSection.appearance, Icons.palette_outlined, 'Appearance'),
+              _menuTile(_SettingsSection.profile, Icons.person_outline, 'Profile', scheme, muted),
+              _menuTile(_SettingsSection.account, Icons.settings_outlined, 'Account', scheme, muted),
+              _menuTile(_SettingsSection.appearance, Icons.palette_outlined, 'Appearance', scheme, muted),
               _menuTile(
                 _SettingsSection.notifications,
                 Icons.notifications_outlined,
                 'Notifications',
+                scheme,
+                muted,
                 trailing: unread > 0 ? '$unread' : null,
               ),
               const SizedBox(height: 14),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
-                child: _buildSectionContent(unread),
+                child: Container(
+                  key: ValueKey(_section),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: panel,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                  ),
+                  child: _buildSectionContent(unread, scheme, muted, isDark),
+                ),
               ),
             ],
           ),
@@ -65,237 +78,250 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _menuTile(_SettingsSection value, IconData icon, String title, {String? trailing}) {
+  Widget _menuTile(
+    _SettingsSection value,
+    IconData icon,
+    String title,
+    ColorScheme scheme,
+    Color muted, {
+    String? trailing,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final active = _section == value;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: active ? Colors.white10 : Colors.transparent,
+        color: active ? (isDark ? Colors.white10 : scheme.primary.withOpacity(0.1)) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
       ),
       child: ListTile(
         onTap: () => setState(() => _section = value),
-        leading: Icon(icon, color: active ? Colors.cyanAccent : Colors.white70),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        leading: Icon(icon, color: active ? scheme.primary : muted),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         trailing: trailing == null
-            ? const Icon(Icons.chevron_right, color: Colors.white38)
+            ? Icon(Icons.chevron_right, color: muted)
             : Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.redAccent.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text(trailing, style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700)),
+                child: Text(
+                  trailing,
+                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700),
+                ),
               ),
       ),
     );
   }
 
-  Widget _buildSectionContent(int unread) {
+  Widget _buildSectionContent(int unread, ColorScheme scheme, Color muted, bool isDark) {
     switch (_section) {
       case _SettingsSection.profile:
-        return _profilePanel();
+        return _profilePanel(scheme, muted, isDark);
       case _SettingsSection.account:
-        return _accountPanel();
+        return _accountPanel(scheme, muted, isDark);
       case _SettingsSection.appearance:
-        return _appearancePanel();
+        return _appearancePanel(scheme, muted, isDark);
       case _SettingsSection.notifications:
-        return _notificationPanel(unread);
+        return _notificationPanel(unread, scheme, muted, isDark);
     }
   }
 
-  Widget _panel({required Widget child}) {
-    return Container(
-      key: ValueKey(_section),
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _profilePanel() {
-    return _panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Public profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
-          const SizedBox(height: 4),
-          const Text('This is how others will see you.', style: TextStyle(color: Colors.white38, fontSize: 12)),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              const CircleAvatar(radius: 28, backgroundColor: Colors.white24, child: Icon(Icons.person, color: Colors.white70)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: _nameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _inputDecoration('Username'),
-                ),
+  Widget _profilePanel(ColorScheme scheme, Color muted, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Public profile', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 18)),
+        const SizedBox(height: 4),
+        Text('This is how others will see you.', style: TextStyle(color: muted, fontSize: 12)),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: isDark ? Colors.white24 : Colors.black12,
+              child: Icon(Icons.person, color: muted),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _nameController,
+                style: TextStyle(color: scheme.onSurface),
+                decoration: _inputDecoration('Username', scheme, muted, isDark),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _bioController,
-            style: const TextStyle(color: Colors.white),
-            maxLines: 3,
-            decoration: _inputDecoration('Bio'),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            enabled: false,
-            style: const TextStyle(color: Colors.white54),
-            decoration: _inputDecoration(SessionStore.user?.email ?? 'email@example.com'),
-          ),
-          const SizedBox(height: 20),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7D3CF8)),
-              child: const Text('Save changes'),
             ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _bioController,
+          style: TextStyle(color: scheme.onSurface),
+          maxLines: 3,
+          decoration: _inputDecoration('Bio', scheme, muted, isDark),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          enabled: false,
+          style: TextStyle(color: muted),
+          decoration: _inputDecoration(SessionStore.user?.email ?? 'email@example.com', scheme, muted, isDark),
+        ),
+        const SizedBox(height: 20),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(backgroundColor: scheme.secondary),
+            child: const Text('Save changes'),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _accountPanel() {
-    return _panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Account Settings', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            value: 'English',
-            dropdownColor: const Color(0xFF1E1E1E),
-            style: const TextStyle(color: Colors.white),
-            decoration: _inputDecoration('Language'),
-            items: const [
-              DropdownMenuItem(value: 'English', child: Text('English')),
-              DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia')),
-            ],
-            onChanged: (_) {},
+  Widget _accountPanel(ColorScheme scheme, Color muted, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Account Settings', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 18)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: 'English',
+          dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          style: TextStyle(color: scheme.onSurface),
+          decoration: _inputDecoration('Language', scheme, muted, isDark),
+          items: const [
+            DropdownMenuItem(value: 'English', child: Text('English')),
+            DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia')),
+          ],
+          onChanged: (_) {},
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+            color: Colors.redAccent.withOpacity(0.08),
           ),
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
-              color: Colors.redAccent.withOpacity(0.08),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Danger Zone', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700)),
-                SizedBox(height: 4),
-                Text('Delete account is irreversible.', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              ],
-            ),
+          child: Text(
+            'Danger Zone: Delete account is irreversible.',
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12),
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                context.read<AuthProvider>().logout();
-                Navigator.pop(context);
-              },
-              icon: const Icon(Icons.logout),
-              label: const Text('Sign Out'),
-            ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              context.read<AuthProvider>().logout();
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.logout),
+            label: const Text('Sign Out'),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _appearancePanel() {
-    return _panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Appearance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
-          const SizedBox(height: 6),
-          const Text('Customize interface mode.', style: TextStyle(color: Colors.white38, fontSize: 12)),
-          const SizedBox(height: 12),
-          _themeTile('Dark', Icons.dark_mode_outlined),
-          const SizedBox(height: 8),
-          _themeTile('Light', Icons.light_mode_outlined),
-          const SizedBox(height: 8),
-          _themeTile('System', Icons.phone_android_outlined),
-        ],
-      ),
+  Widget _appearancePanel(ColorScheme scheme, Color muted, bool isDark) {
+    final theme = context.watch<ThemeProvider>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Appearance', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 18)),
+        const SizedBox(height: 6),
+        Text('Customize interface mode.', style: TextStyle(color: muted, fontSize: 12)),
+        const SizedBox(height: 12),
+        _themeTile('Dark', Icons.dark_mode_outlined, ThemeMode.dark, theme, scheme, muted, isDark),
+        const SizedBox(height: 8),
+        _themeTile('Light', Icons.light_mode_outlined, ThemeMode.light, theme, scheme, muted, isDark),
+        const SizedBox(height: 8),
+        _themeTile('System', Icons.phone_android_outlined, ThemeMode.system, theme, scheme, muted, isDark),
+      ],
     );
   }
 
-  Widget _themeTile(String mode, IconData icon) {
-    final active = _themeMode == mode;
+  Widget _themeTile(
+    String label,
+    IconData icon,
+    ThemeMode mode,
+    ThemeProvider theme,
+    ColorScheme scheme,
+    Color muted,
+    bool isDark,
+  ) {
+    final active = theme.mode == mode;
     return InkWell(
-      onTap: () => setState(() => _themeMode = mode),
+      onTap: () => theme.setMode(mode),
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: active ? Colors.white12 : Colors.white10,
+          color: active ? (isDark ? Colors.white12 : scheme.primary.withOpacity(0.12)) : (isDark ? Colors.white10 : Colors.black.withOpacity(0.03)),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: active ? Colors.cyanAccent : Colors.white10),
+          border: Border.all(color: active ? scheme.primary : (isDark ? Colors.white10 : Colors.black12)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: active ? Colors.cyanAccent : Colors.white70),
+            Icon(icon, color: active ? scheme.primary : muted),
             const SizedBox(width: 8),
-            Text(mode, style: const TextStyle(color: Colors.white)),
+            Text(label, style: TextStyle(color: scheme.onSurface)),
             const Spacer(),
-            if (active) const Icon(Icons.check_circle, color: Colors.cyanAccent, size: 18),
+            if (active) Icon(Icons.check_circle, color: scheme.primary, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _notificationPanel(int unread) {
-    return _panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Notifications', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
-          const SizedBox(height: 6),
-          Text('Unread direct messages: $unread', style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          _switchTile(
-            title: 'Marketing emails',
-            subtitle: 'Receive newsletter and product tips.',
-            value: _marketingEmail,
-            onChanged: (v) => setState(() => _marketingEmail = v),
-          ),
-          _switchTile(
-            title: 'Social emails',
-            subtitle: 'Friend request and group updates.',
-            value: _socialEmail,
-            onChanged: (v) => setState(() => _socialEmail = v),
-          ),
-          _switchTile(
-            title: 'Security emails',
-            subtitle: 'Important account alerts.',
-            value: _securityEmail,
-            onChanged: (v) => setState(() => _securityEmail = v),
-          ),
-        ],
-      ),
+  Widget _notificationPanel(int unread, ColorScheme scheme, Color muted, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Notifications', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 18)),
+        const SizedBox(height: 6),
+        Text('Unread direct messages: $unread', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        _switchTile(
+          title: 'Marketing emails',
+          subtitle: 'Receive newsletter and product tips.',
+          value: _marketingEmail,
+          onChanged: (v) => setState(() => _marketingEmail = v),
+          muted: muted,
+          isDark: isDark,
+          onSurface: scheme.onSurface,
+        ),
+        _switchTile(
+          title: 'Social emails',
+          subtitle: 'Friend request and group updates.',
+          value: _socialEmail,
+          onChanged: (v) => setState(() => _socialEmail = v),
+          muted: muted,
+          isDark: isDark,
+          onSurface: scheme.onSurface,
+        ),
+        _switchTile(
+          title: 'Security emails',
+          subtitle: 'Important account alerts.',
+          value: _securityEmail,
+          onChanged: (v) => setState(() => _securityEmail = v),
+          muted: muted,
+          isDark: isDark,
+          onSurface: scheme.onSurface,
+        ),
+      ],
     );
   }
 
@@ -304,12 +330,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
+    required Color muted,
+    required bool isDark,
+    required Color onSurface,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.03),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -318,8 +347,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                Text(title, style: TextStyle(color: onSurface, fontWeight: FontWeight.w600, fontSize: 13)),
+                Text(subtitle, style: TextStyle(color: muted, fontSize: 11)),
               ],
             ),
           ),
@@ -329,23 +358,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String hint, ColorScheme scheme, Color muted, bool isDark) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white38),
+      hintStyle: TextStyle(color: muted),
       filled: true,
-      fillColor: Colors.white10,
+      fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.03),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white12),
+        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.black12),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.cyanAccent),
+        borderSide: BorderSide(color: scheme.primary),
       ),
     );
   }

@@ -37,7 +37,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   void initState() {
     super.initState();
     _loadMessages();
-    _polling = Timer.periodic(const Duration(seconds: 4), (_) => _loadMessages(silent: true));
+    _polling = Timer.periodic(
+      const Duration(seconds: 4),
+      (_) => _loadMessages(silent: true),
+    );
   }
 
   @override
@@ -98,41 +101,58 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent + 60,
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
       );
     });
   }
 
+  String _formatTime(DateTime dateTime) {
+    final h = dateTime.hour.toString().padLeft(2, '0');
+    final m = dateTime.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  void _openVideoCall() {
+    final me = SessionStore.user?.id ?? 'me';
+    final ids = [me, widget.id]..sort();
+    final roomId = 'dm-${ids.join('-')}';
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VideoCallScreen(roomId: roomId, title: widget.title),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final chatBg = isDark ? const Color(0xFF0B141A) : const Color(0xFFEFF2F5);
+    final ownBubble = isDark ? const Color(0xFF005C4B) : const Color(0xFFDCF8C6);
+    final otherBubble = isDark ? const Color(0xFF202C33) : Colors.white;
+    final ownText = Colors.white;
+    final otherText = isDark ? Colors.white : const Color(0xFF0F172A);
+    final inputBg = isDark ? const Color(0xFF202C33) : Colors.white;
+    final hintColor = isDark ? Colors.white38 : const Color(0xFF64748B);
+    final border = isDark ? Colors.white10 : const Color(0xFFDDE3EA);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: chatBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
+        backgroundColor: isDark ? const Color(0xFF202C33) : Colors.white,
+        titleSpacing: 0,
         title: Text(widget.title),
         actions: [
-          IconButton(
-            onPressed: () {
-              final roomId = widget.isGroup
-                  ? 'group-${widget.id}'
-                  : (() {
-                      final me = SessionStore.user?.id ?? 'me';
-                      final ids = [me, widget.id]..sort();
-                      return 'dm-${ids.join('-')}';
-                    })();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => VideoCallScreen(
-                    roomId: roomId,
-                    title: widget.title,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.videocam_outlined, color: Colors.cyanAccent),
-          ),
+          if (!widget.isGroup)
+            IconButton(
+              onPressed: _openVideoCall,
+              icon: Icon(
+                Icons.videocam_rounded,
+                color: theme.colorScheme.primary,
+              ),
+            ),
         ],
       ),
       body: SafeArea(
@@ -140,68 +160,154 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           children: [
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: Colors.cyanAccent))
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
                   : _error != null
-                      ? Center(child: Text(_error!, style: const TextStyle(color: Colors.redAccent)))
-                      : ListView.builder(
-                          controller: _scrollController,
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) {
-                            final msg = _messages[index];
-                            final mine = msg.senderId == SessionStore.user?.id;
-                            return Align(
-                              alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                                decoration: BoxDecoration(
-                                  color: mine ? Colors.cyanAccent.withOpacity(0.22) : Colors.white10,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(msg.content, style: const TextStyle(color: Colors.white)),
+                  ? Center(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = _messages[index];
+                        final mine = msg.senderId == SessionStore.user?.id;
+                        return Align(
+                          alignment: mine
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.78,
+                            ),
+                            margin: const EdgeInsets.symmetric(vertical: 3),
+                            padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
+                            decoration: BoxDecoration(
+                              color: mine ? ownBubble : otherBubble,
+                              borderRadius: BorderRadius.only(
+                                topLeft: const Radius.circular(14),
+                                topRight: const Radius.circular(14),
+                                bottomLeft: Radius.circular(mine ? 14 : 4),
+                                bottomRight: Radius.circular(mine ? 4 : 14),
                               ),
-                            );
-                          },
-                        ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(
+                                    isDark ? 0.15 : 0.04,
+                                  ),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    msg.content,
+                                    style: TextStyle(
+                                      color: mine ? ownText : otherText,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _formatTime(msg.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: mine
+                                        ? Colors.white70
+                                        : (isDark
+                                              ? Colors.white54
+                                              : const Color(0xFF64748B)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              decoration: const BoxDecoration(
-                color: Color(0xFF141414),
-                border: Border(top: BorderSide(color: Colors.white10)),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF111B21) : const Color(0xFFF7FAFC),
+                border: Border(top: BorderSide(color: border)),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      minLines: 1,
-                      maxLines: 3,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Type a message...',
-                        hintStyle: const TextStyle(color: Colors.white38),
-                        filled: true,
-                        fillColor: Colors.white10,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: inputBg,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: border),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.emoji_emotions_outlined,
+                            color: hintColor,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: TextField(
+                              controller: _messageController,
+                              minLines: 1,
+                              maxLines: 4,
+                              style: TextStyle(color: otherText),
+                              decoration: InputDecoration(
+                                hintText: 'Ketik pesan',
+                                hintStyle: TextStyle(color: hintColor),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _sending ? null : _send,
-                    icon: _sending
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent),
-                          )
-                        : const Icon(Icons.send_rounded, color: Colors.cyanAccent),
+                  GestureDetector(
+                    onTap: _sending ? null : _send,
+                    child: Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: _sending
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.send_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                      ),
+                    ),
                   ),
                 ],
               ),

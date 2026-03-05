@@ -20,7 +20,7 @@ class UnreadProvider extends ChangeNotifier {
   void start() {
     _timer?.cancel();
     refresh();
-    _timer = Timer.periodic(const Duration(seconds: 10), (_) => refresh());
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => refresh());
   }
 
   void stop() {
@@ -29,15 +29,19 @@ class UnreadProvider extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    _loading = true;
-    notifyListeners();
+    if (!_loading) {
+      _loading = true;
+      notifyListeners();
+    }
     try {
       final counts = await _chatService.getDirectUnreadCounts();
-      _directUnreadByUser = counts;
+      if (!_isSameMap(_directUnreadByUser, counts)) {
+        _directUnreadByUser = counts;
+      }
     } catch (_) {
       // Keep last known unread counts if refresh fails.
     } finally {
-      _loading = false;
+      if (_loading) _loading = false;
       notifyListeners();
     }
   }
@@ -45,5 +49,13 @@ class UnreadProvider extends ChangeNotifier {
   void clear() {
     _directUnreadByUser = const <String, int>{};
     notifyListeners();
+  }
+
+  bool _isSameMap(Map<String, int> a, Map<String, int> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (b[entry.key] != entry.value) return false;
+    }
+    return true;
   }
 }

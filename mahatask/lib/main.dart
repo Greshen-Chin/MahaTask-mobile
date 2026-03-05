@@ -5,7 +5,9 @@ import 'screens/dashboard_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'services/auth_provider.dart';
 import 'services/navigation_provider.dart';
+import 'services/theme_provider.dart';
 import 'services/unread_provider.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MahaTaskApp());
@@ -21,19 +23,19 @@ class MahaTaskApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => UnreadProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'MahaTask',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF0D0D0D),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.cyanAccent,
-            brightness: Brightness.dark,
-          ),
-        ),
-        home: const _AppGate(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, theme, _) {
+          return MaterialApp(
+            title: 'MahaTask',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: theme.mode,
+            home: const _AppGate(),
+          );
+        },
       ),
     );
   }

@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/video_call_service.dart';
 
 class VideoCallScreen extends StatefulWidget {
-  const VideoCallScreen({
-    super.key,
-    required this.roomId,
-    required this.title,
-  });
+  const VideoCallScreen({super.key, required this.roomId, required this.title});
 
   final String roomId;
   final String title;
@@ -18,6 +14,8 @@ class VideoCallScreen extends StatefulWidget {
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
   final VideoCallService _videoCallService = VideoCallService();
+  bool _micMuted = true;
+  bool _cameraOff = true;
 
   @override
   void initState() {
@@ -39,11 +37,39 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   @override
   Widget build(BuildContext context) {
     final participants = _videoCallService.participants;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBg = isDark ? const Color(0xFF0B141A) : const Color(0xFFEFF2F5);
+    final topBarBg = isDark ? const Color(0xFF202C33) : Colors.white;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: appBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
-        title: Text('Video Call - ${widget.title}'),
+        backgroundColor: topBarBg,
+        titleSpacing: 0,
+        title: Text(widget.title),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _videoCallService.isConnected
+                      ? const Color(0xFF22C55E).withOpacity(0.2)
+                      : Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(
+                  _videoCallService.isConnected ? Icons.wifi : Icons.wifi_off,
+                  color: _videoCallService.isConnected
+                      ? const Color(0xFF22C55E)
+                      : Colors.orange,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -51,7 +77,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             if (_videoCallService.lastError != null)
               Container(
                 width: double.infinity,
-                margin: const EdgeInsets.all(12),
+                margin: const EdgeInsets.all(10),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.redAccent.withOpacity(0.12),
@@ -62,28 +88,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                   style: const TextStyle(color: Colors.redAccent),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    _videoCallService.isConnected ? Icons.wifi : Icons.wifi_off,
-                    color: _videoCallService.isConnected ? Colors.greenAccent : Colors.redAccent,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _videoCallService.isConnected ? 'Connected' : 'Connecting...',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${participants.length}/8',
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                ],
-              ),
-            ),
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.all(12),
@@ -95,7 +99,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                 ),
                 itemBuilder: (context, index) {
                   if (participants.isEmpty) {
-                    return _tile('Waiting for participant...', isSelf: true);
+                    return _tile('Menunggu...', isSelf: true);
                   }
                   final p = participants[index];
                   return _tile(
@@ -110,8 +114,26 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _actionButton(icon: Icons.mic_off_outlined, color: Colors.white24, onTap: () {}),
-                  _actionButton(icon: Icons.videocam_off_outlined, color: Colors.white24, onTap: () {}),
+                  _actionButton(
+                    icon: _micMuted
+                        ? Icons.mic_off_outlined
+                        : Icons.mic_none_outlined,
+                    color: _micMuted ? Colors.white24 : const Color(0xFF22C55E),
+                    onTap: () {
+                      setState(() => _micMuted = !_micMuted);
+                    },
+                  ),
+                  _actionButton(
+                    icon: _cameraOff
+                        ? Icons.videocam_off_outlined
+                        : Icons.videocam_outlined,
+                    color: _cameraOff
+                        ? Colors.white24
+                        : Theme.of(context).colorScheme.primary,
+                    onTap: () {
+                      setState(() => _cameraOff = !_cameraOff);
+                    },
+                  ),
                   _actionButton(
                     icon: Icons.call_end,
                     color: Colors.redAccent,
@@ -132,7 +154,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         gradient: LinearGradient(
           colors: isSelf
               ? [const Color(0xFF25333A), const Color(0xFF131C21)]
-              : [const Color(0xFF2B2140), const Color(0xFF17131F)],
+              : [const Color(0xFF21324A), const Color(0xFF101B29)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -171,12 +193,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         child: Icon(icon, color: Colors.white),
       ),
     );

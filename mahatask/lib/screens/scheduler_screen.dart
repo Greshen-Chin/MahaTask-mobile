@@ -4,10 +4,7 @@ import '../services/scheduler_service.dart';
 import '../services/task_service.dart';
 
 class SchedulerScreen extends StatefulWidget {
-  const SchedulerScreen({
-    super.key,
-    this.embedded = false,
-  });
+  const SchedulerScreen({super.key, this.embedded = false});
 
   final bool embedded;
 
@@ -15,9 +12,14 @@ class SchedulerScreen extends StatefulWidget {
   State<SchedulerScreen> createState() => _SchedulerScreenState();
 }
 
-class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAliveClientMixin {
+class _SchedulerScreenState extends State<SchedulerScreen>
+    with AutomaticKeepAliveClientMixin {
   final SchedulerService _service = SchedulerService();
-  DateTime _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime _focusedMonth = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    1,
+  );
   DateTime _selectedDay = DateTime.now();
 
   bool _loading = true;
@@ -60,6 +62,10 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subColor = isDark ? Colors.white54 : const Color(0xFF64748B);
+
     final body = SafeArea(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -67,20 +73,28 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Scheduler',
-              style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: titleColor,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Monthly calendar, timeline, and upcoming deadlines.',
-              style: TextStyle(color: Colors.white54),
+              style: TextStyle(color: subColor),
             ),
             const SizedBox(height: 18),
             _buildMonthCalendar(),
             const SizedBox(height: 16),
             if (_loading)
-              const Center(child: CircularProgressIndicator(color: Colors.cyanAccent))
+              Center(
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              )
             else if (_error != null)
               _buildError()
             else ...[
@@ -96,15 +110,29 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
     if (widget.embedded) return body;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: body,
     );
   }
 
   Widget _buildMonthCalendar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panel = isDark ? Colors.white10 : Colors.white;
+    final heading = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? Colors.white38 : const Color(0xFF64748B);
+    final dayColor = isDark ? Colors.white70 : const Color(0xFF334155);
+    final border = isDark ? Colors.transparent : const Color(0xFFE2E8F0);
     final monthLabel = _monthName(_focusedMonth.month);
-    final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
-    final firstWeekday = DateTime(_focusedMonth.year, _focusedMonth.month, 1).weekday;
+    final daysInMonth = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month + 1,
+      0,
+    ).day;
+    final firstWeekday = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month,
+      1,
+    ).weekday;
     final leadingEmpty = firstWeekday - 1;
     final totalCells = leadingEmpty + daysInMonth;
     final rows = (totalCells / 7).ceil();
@@ -112,8 +140,9 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: panel,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
       ),
       child: Column(
         children: [
@@ -122,40 +151,50 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
             children: [
               Text(
                 '$monthLabel ${_focusedMonth.year}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                style: TextStyle(color: heading, fontWeight: FontWeight.w700),
               ),
               Row(
                 children: [
                   IconButton(
                     onPressed: () {
                       setState(() {
-                        _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+                        _focusedMonth = DateTime(
+                          _focusedMonth.year,
+                          _focusedMonth.month - 1,
+                          1,
+                        );
                       });
                     },
-                    icon: const Icon(Icons.chevron_left, color: Colors.white70),
+                    icon: Icon(Icons.chevron_left, color: dayColor),
                   ),
                   IconButton(
                     onPressed: () {
                       setState(() {
-                        _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+                        _focusedMonth = DateTime(
+                          _focusedMonth.year,
+                          _focusedMonth.month + 1,
+                          1,
+                        );
                       });
                     },
-                    icon: const Icon(Icons.chevron_right, color: Colors.white70),
+                    icon: Icon(Icons.chevron_right, color: dayColor),
                   ),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 4),
-          const Row(
+          Row(
             children: [
-              Expanded(child: Center(child: Text('Mon', style: TextStyle(color: Colors.white38, fontSize: 11)))),
-              Expanded(child: Center(child: Text('Tue', style: TextStyle(color: Colors.white38, fontSize: 11)))),
-              Expanded(child: Center(child: Text('Wed', style: TextStyle(color: Colors.white38, fontSize: 11)))),
-              Expanded(child: Center(child: Text('Thu', style: TextStyle(color: Colors.white38, fontSize: 11)))),
-              Expanded(child: Center(child: Text('Fri', style: TextStyle(color: Colors.white38, fontSize: 11)))),
-              Expanded(child: Center(child: Text('Sat', style: TextStyle(color: Colors.white38, fontSize: 11)))),
-              Expanded(child: Center(child: Text('Sun', style: TextStyle(color: Colors.white38, fontSize: 11)))),
+              for (final d in const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      d,
+                      style: TextStyle(color: muted, fontSize: 11),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -171,7 +210,11 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
                         if (dayNum < 1 || dayNum > daysInMonth) {
                           return const SizedBox(height: 34);
                         }
-                        final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
+                        final date = DateTime(
+                          _focusedMonth.year,
+                          _focusedMonth.month,
+                          dayNum,
+                        );
                         final selected = _isSameDate(date, _selectedDay);
                         return GestureDetector(
                           onTap: () => setState(() => _selectedDay = date),
@@ -179,15 +222,23 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
                             height: 34,
                             margin: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: selected ? Colors.cyanAccent.withOpacity(0.25) : Colors.transparent,
+                              color: selected
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.2)
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Center(
                               child: Text(
                                 '$dayNum',
                                 style: TextStyle(
-                                  color: selected ? Colors.cyanAccent : Colors.white70,
-                                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                                  color: selected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : dayColor,
+                                  fontWeight: selected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -204,6 +255,13 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
   }
 
   Widget _buildDailyTimeline() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panel = isDark ? Colors.white10 : Colors.white;
+    final text = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? Colors.white54 : const Color(0xFF64748B);
+    final border = isDark ? Colors.transparent : const Color(0xFFE2E8F0);
+    final itemBg = isDark ? Colors.black26 : const Color(0xFFF8FAFC);
+    final itemBorder = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
     final daily = _schedules
         .where((item) => _isSameDate(item.startTime, _selectedDay))
         .toList(growable: false)
@@ -213,19 +271,23 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: panel,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Daily Timeline (${_selectedDay.day}/${_selectedDay.month}/${_selectedDay.year})',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+            style: TextStyle(color: text, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
           if (daily.isEmpty)
-            const Text('No schedule for this day.', style: TextStyle(color: Colors.white38))
+            Text(
+              'No schedule for this day.',
+              style: TextStyle(color: muted),
+            )
           else
             ...daily.map((item) {
               final start = _hhmm(item.startTime);
@@ -234,9 +296,9 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.black26,
+                  color: itemBg,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
+                  border: Border.all(color: itemBorder),
                 ),
                 child: Row(
                   children: [
@@ -245,7 +307,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
                       height: 40,
                       margin: const EdgeInsets.only(right: 10),
                       decoration: BoxDecoration(
-                        color: Colors.purpleAccent,
+                        color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -253,8 +315,17 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                          Text('$start - $end', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                          Text(
+                            item.title,
+                            style: TextStyle(
+                              color: text,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            '$start - $end',
+                            style: TextStyle(color: muted, fontSize: 12),
+                          ),
                         ],
                       ),
                     ),
@@ -268,50 +339,64 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
   }
 
   Widget _buildUpcomingDeadlines() {
-    final upcoming = _deadlines
-        .where((task) => task.dueDate != null)
-        .toList(growable: false)
-      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panel = isDark ? Colors.white10 : Colors.white;
+    final text = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? Colors.white54 : const Color(0xFF64748B);
+    final border = isDark ? Colors.transparent : const Color(0xFFE2E8F0);
+    final itemBg = isDark ? Colors.black26 : const Color(0xFFF8FAFC);
+    final itemBorder = isDark ? Colors.white12 : const Color(0xFFE2E8F0);
+    final upcoming =
+        _deadlines.where((task) => task.dueDate != null).toList(growable: false)
+          ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: panel,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Upcoming Deadlines',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+            style: TextStyle(color: text, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
           if (upcoming.isEmpty)
-            const Text('No upcoming deadlines.', style: TextStyle(color: Colors.white38))
+            Text(
+              'No upcoming deadlines.',
+              style: TextStyle(color: muted),
+            )
           else
             ...upcoming.take(8).map((task) {
               final due = task.dueDate!;
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.black26,
+                  color: itemBg,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
+                  border: Border.all(color: itemBorder),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.flag_outlined, color: Colors.cyanAccent, size: 18),
+                    Icon(
+                      Icons.flag_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(task.title, style: const TextStyle(color: Colors.white)),
+                      child: Text(task.title, style: TextStyle(color: text)),
                     ),
-                    Text(
-                      '${due.day}/${due.month}',
-                      style: const TextStyle(color: Colors.white54),
-                    ),
+                    Text('${due.day}/${due.month}', style: TextStyle(color: muted)),
                   ],
                 ),
               );
@@ -334,10 +419,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> with AutomaticKeepAli
         children: [
           Text(_error!, style: const TextStyle(color: Colors.redAccent)),
           const SizedBox(height: 10),
-          TextButton(
-            onPressed: _load,
-            child: const Text('Retry'),
-          ),
+          TextButton(onPressed: _load, child: const Text('Retry')),
         ],
       ),
     );

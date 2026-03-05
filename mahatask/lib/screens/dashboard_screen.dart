@@ -26,7 +26,7 @@ class DashboardScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: IndexedStack(index: nav.index, children: pages),
       ),
@@ -46,7 +46,8 @@ class _HomeDashboardTab extends StatefulWidget {
   State<_HomeDashboardTab> createState() => _HomeDashboardTabState();
 }
 
-class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeepAliveClientMixin {
+class _HomeDashboardTabState extends State<_HomeDashboardTab>
+    with AutomaticKeepAliveClientMixin {
   final TaskService _taskService = TaskService();
 
   bool _loading = true;
@@ -66,7 +67,11 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
     try {
       final results = await Future.wait<dynamic>([
         _taskService.fetchTasks(),
-        _taskService.fetchRecommendations(availableMinutes: 120, limit: 3, algorithm: 'auto'),
+        _taskService.fetchRecommendations(
+          availableMinutes: 120,
+          limit: 3,
+          algorithm: 'auto',
+        ),
       ]);
       final tasks = results[0] as List<TaskItem>;
       final recommendations = results[1] as List<TaskRecommendation>;
@@ -89,13 +94,19 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final name = SessionStore.user?.name?.trim();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final name = SessionStore.user?.name.trim();
     final safeName = (name != null && name.isNotEmpty) ? name : 'User';
     final total = _tasks.length;
     final done = _tasks.where((t) => t.status == 'DONE').length;
     final inProgress = _tasks.where((t) => t.status == 'IN_PROGRESS').length;
     final doneRate = total == 0 ? 0.0 : done / total;
     final now = DateTime.now();
+    final card = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final cardBorder = isDark ? Colors.white10 : const Color(0xFFE2E8F0);
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? Colors.white54 : const Color(0xFF64748B);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -106,11 +117,14 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.circle, color: Colors.greenAccent, size: 9),
-                  SizedBox(width: 6),
-                  Text('Online status', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  const Icon(Icons.circle, color: Colors.greenAccent, size: 9),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Online status',
+                    style: TextStyle(color: muted, fontSize: 11),
+                  ),
                 ],
               ),
               IconButton(
@@ -120,7 +134,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                     MaterialPageRoute(builder: (_) => const SettingsScreen()),
                   );
                 },
-                icon: const Icon(Icons.settings_outlined, color: Colors.white70),
+                icon: Icon(Icons.settings_outlined, color: muted),
               ),
             ],
           ),
@@ -134,8 +148,8 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                     RichText(
                       text: TextSpan(
                         text: 'Good afternoon, ',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: titleColor,
                           fontSize: 30,
                           fontWeight: FontWeight.w800,
                           height: 1.1,
@@ -143,7 +157,11 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                         children: [
                           TextSpan(
                             text: safeName,
-                            style: const TextStyle(color: Color(0xFFB882FF)),
+                            style: TextStyle(
+                              color: isDark
+                                  ? const Color(0xFFB882FF)
+                                  : theme.colorScheme.primary,
+                            ),
                           ),
                         ],
                       ),
@@ -151,20 +169,22 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                     const SizedBox(height: 6),
                     Text(
                       'You have ${total - done > 0 ? total - done : 0} active tasks today.',
-                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                      style: TextStyle(color: muted, fontSize: 12),
                     ),
                   ],
                 ),
               ),
-              _DateCard(now: now),
+              _DateCard(now: now, isDark: isDark),
             ],
           ),
           const SizedBox(height: 12),
           if (_loading)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(10),
-                child: CircularProgressIndicator(color: Colors.cyanAccent),
+                padding: const EdgeInsets.all(10),
+                child: CircularProgressIndicator(
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ),
           Row(
@@ -176,6 +196,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                   footer: '${total - done > 0 ? total - done : 0} left',
                   color: const Color(0xFF7FAEFF),
                   progress: total == 0 ? 0 : 1,
+                  isDark: isDark,
                 ),
               ),
               const SizedBox(width: 8),
@@ -186,6 +207,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                   footer: '${(doneRate * 100).toStringAsFixed(0)}% Done',
                   color: const Color(0xFF8BFFB0),
                   progress: doneRate,
+                  isDark: isDark,
                 ),
               ),
               const SizedBox(width: 8),
@@ -196,6 +218,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                   footer: 'Active',
                   color: const Color(0xFFFFD66E),
                   progress: total == 0 ? 0 : inProgress / total,
+                  isDark: isDark,
                 ),
               ),
             ],
@@ -205,20 +228,41 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: card,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: cardBorder),
             ),
             child: Row(
               children: [
-                const Text('STUDY GROUP', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w700, fontSize: 12)),
+                Text(
+                  'STUDY GROUP',
+                  style: TextStyle(
+                    color: muted,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => context.read<NavigationProvider>().setIndex(3),
-                  child: const Text('Open hub', style: TextStyle(color: Color(0xFFB882FF), fontSize: 11)),
+                  child: Text(
+                    'Open hub',
+                    style: TextStyle(
+                      color: isDark
+                          ? const Color(0xFFB882FF)
+                          : theme.colorScheme.primary,
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.groups_outlined, color: Color(0xFFB882FF), size: 16),
+                Icon(
+                  Icons.groups_outlined,
+                  color: isDark
+                      ? const Color(0xFFB882FF)
+                      : theme.colorScheme.primary,
+                  size: 16,
+                ),
               ],
             ),
           ),
@@ -227,15 +271,25 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: card,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: cardBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Productivity pulse', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-                const Text('Your daily consistency score', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                Text(
+                  'Productivity pulse',
+                  style: TextStyle(
+                    color: titleColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  'Your daily consistency score',
+                  style: TextStyle(color: muted, fontSize: 11),
+                ),
                 const SizedBox(height: 14),
                 Center(
                   child: Stack(
@@ -248,21 +302,27 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                           value: doneRate,
                           strokeWidth: 8,
                           color: const Color(0xFF8BFFB0),
-                          backgroundColor: Colors.white10,
+                          backgroundColor: isDark
+                              ? Colors.white10
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                       Text(
                         '${(doneRate * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: titleColor,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Center(
+                Center(
                   child: Text(
                     "You're one productive streak away from leveling up your day.",
-                    style: TextStyle(color: Colors.white38, fontSize: 10),
+                    style: TextStyle(color: muted, fontSize: 10),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -270,37 +330,54 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
             ),
           ),
           const SizedBox(height: 10),
-          _priorityFocusCard(context),
+          _priorityFocusCard(context, isDark: isDark),
           const SizedBox(height: 10),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: card,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: cardBorder),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text("Today's Flow", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                    Spacer(),
-                    Icon(Icons.calendar_today_outlined, color: Colors.white38, size: 14),
+                    Text(
+                      "Today's Flow",
+                      style: TextStyle(
+                        color: titleColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      color: muted,
+                      size: 14,
+                    ),
                   ],
                 ),
-                SizedBox(height: 2),
-                Text('Upcoming plan', style: TextStyle(color: Colors.white38, fontSize: 10)),
-                SizedBox(height: 28),
-                Center(
-                  child: Icon(Icons.circle, color: Colors.white10, size: 24),
+                const SizedBox(height: 2),
+                Text(
+                  'Upcoming plan',
+                  style: TextStyle(color: muted, fontSize: 10),
                 ),
-                SizedBox(height: 18),
+                const SizedBox(height: 28),
+                Center(
+                  child: Icon(
+                    Icons.circle,
+                    color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: 18),
                 Center(
                   child: Text(
                     'No events today, enjoy your free time!',
-                    style: TextStyle(color: Colors.white24, fontSize: 10),
+                    style: TextStyle(color: muted, fontSize: 10),
                   ),
                 ),
               ],
@@ -311,43 +388,68 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
     );
   }
 
-  Widget _priorityFocusCard(BuildContext context) {
+  Widget _priorityFocusCard(BuildContext context, {required bool isDark}) {
+    final theme = Theme.of(context);
     final nav = context.read<NavigationProvider>();
     final items = _recommendations;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+    final textMuted = isDark ? Colors.white54 : const Color(0xFF64748B);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF11222C), Color(0xFF19171F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF11222C), Color(0xFF19171F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : const LinearGradient(
+                colors: [Color(0xFFE0F2FE), Color(0xFFF8FAFC)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(
+          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.auto_awesome, color: Colors.cyanAccent, size: 16),
-              SizedBox(width: 6),
-              Text('Priority Focus', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              Icon(
+                Icons.auto_awesome,
+                color: theme.colorScheme.primary,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Priority Focus',
+                style: TextStyle(color: textPrimary, fontWeight: FontWeight.w700),
+              ),
             ],
           ),
           const SizedBox(height: 6),
           if (items.isEmpty)
-            const Text('No recommendation available.', style: TextStyle(color: Colors.white38, fontSize: 11))
+            Text(
+              'No recommendation available.',
+              style: TextStyle(color: textMuted, fontSize: 11),
+            )
           else
             ...items.take(2).map((item) {
               return Container(
                 margin: const EdgeInsets.only(top: 6),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white10,
+                  color: isDark ? Colors.white10 : Colors.white,
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -355,10 +457,16 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                          Text(
+                            item.title,
+                            style: TextStyle(
+                              color: textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           Text(
                             '${item.priority} - ${item.estimatedMinutes}m - score ${item.score.toStringAsFixed(2)}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 11),
+                            style: TextStyle(color: textMuted, fontSize: 11),
                           ),
                         ],
                       ),
@@ -378,27 +486,55 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> with AutomaticKeep
 }
 
 class _DateCard extends StatelessWidget {
-  const _DateCard({required this.now});
+  const _DateCard({required this.now, required this.isDark});
 
   final DateTime now;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     const weekdays = <String>['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-    const months = <String>['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return Container(
       width: 70,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: isDark ? const Color(0xFF171717) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(
+          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         children: [
-          Text(weekdays[now.weekday - 1], style: const TextStyle(color: Colors.white38, fontSize: 9)),
+          Text(
+            weekdays[now.weekday - 1],
+            style: TextStyle(
+              color: isDark ? Colors.white38 : const Color(0xFF64748B),
+              fontSize: 9,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text('${now.day} ${months[now.month - 1]}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          Text(
+            '${now.day} ${months[now.month - 1]}',
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -412,6 +548,7 @@ class _CircularStatCard extends StatelessWidget {
     required this.footer,
     required this.color,
     required this.progress,
+    required this.isDark,
   });
 
   final String value;
@@ -419,15 +556,18 @@ class _CircularStatCard extends StatelessWidget {
   final String footer;
   final Color color;
   final double progress;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(
+          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         children: [
@@ -441,16 +581,37 @@ class _CircularStatCard extends StatelessWidget {
                   value: progress.clamp(0.0, 1.0),
                   strokeWidth: 4,
                   color: color,
-                  backgroundColor: Colors.white12,
+                  backgroundColor: isDark
+                      ? Colors.white12
+                      : const Color(0xFFE2E8F0),
                 ),
-                Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.white38, fontSize: 8), textAlign: TextAlign.center),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? Colors.white38 : const Color(0xFF64748B),
+              fontSize: 8,
+            ),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 3),
-          Text(footer, style: TextStyle(color: color.withOpacity(0.9), fontSize: 9)),
+          Text(
+            footer,
+            style: TextStyle(
+              color: color.withValues(alpha: 0.9),
+              fontSize: 9,
+            ),
+          ),
         ],
       ),
     );

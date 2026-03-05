@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/task_service.dart';
 
 class TasksScreen extends StatefulWidget {
-  const TasksScreen({
-    super.key,
-    this.embedded = false,
-  });
+  const TasksScreen({super.key, this.embedded = false});
 
   final bool embedded;
 
@@ -14,7 +11,8 @@ class TasksScreen extends StatefulWidget {
   State<TasksScreen> createState() => _TasksScreenState();
 }
 
-class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClientMixin {
+class _TasksScreenState extends State<TasksScreen>
+    with AutomaticKeepAliveClientMixin {
   final TaskService _taskService = TaskService();
 
   bool _isLoading = true;
@@ -59,6 +57,12 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
   }
 
   Future<void> _openCreateTaskSheet() async {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final fieldText = isDark ? Colors.white : const Color(0xFF0F172A);
+    final dropdownBg = isDark ? const Color(0xFF262626) : Colors.white;
+    final iconColor = isDark ? Colors.white : const Color(0xFF334155);
+    final outline = isDark ? Colors.white24 : const Color(0xFFD1D9E6);
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     var selectedScope = TaskScope.personal;
@@ -72,7 +76,7 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF161616),
+      backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -106,12 +110,19 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Create Task',
-                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: fieldText,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Scope', style: TextStyle(color: Colors.white70)),
+                    Text(
+                      'Scope',
+                      style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+                    ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 10,
@@ -119,12 +130,16 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                         ChoiceChip(
                           label: const Text('Personal'),
                           selected: selectedScope == TaskScope.personal,
-                          onSelected: (_) => setModalState(() => selectedScope = TaskScope.personal),
+                          onSelected: (_) => setModalState(
+                            () => selectedScope = TaskScope.personal,
+                          ),
                         ),
                         ChoiceChip(
                           label: const Text('Group'),
                           selected: selectedScope == TaskScope.group,
-                          onSelected: (_) => setModalState(() => selectedScope = TaskScope.group),
+                          onSelected: (_) => setModalState(
+                            () => selectedScope = TaskScope.group,
+                          ),
                         ),
                       ],
                     ),
@@ -132,32 +147,39 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                       const SizedBox(height: 12),
                       DropdownButtonFormField<GroupOption>(
                         value: selectedGroup,
-                        dropdownColor: const Color(0xFF262626),
+                        dropdownColor: dropdownBg,
                         decoration: _inputDecoration('Choose group'),
-                        iconEnabledColor: Colors.white,
+                        iconEnabledColor: iconColor,
                         items: _groups
                             .map(
                               (group) => DropdownMenuItem<GroupOption>(
                                 value: group,
-                                child: Text(group.name, style: const TextStyle(color: Colors.white)),
+                                child: Text(
+                                  group.name,
+                                  style: TextStyle(color: fieldText),
+                                ),
                               ),
                             )
                             .toList(growable: false),
-                        onChanged: (value) => setModalState(() => selectedGroup = value),
+                        onChanged: (value) =>
+                            setModalState(() => selectedGroup = value),
                       ),
                       if (_groups.isEmpty)
                         const Padding(
                           padding: EdgeInsets.only(top: 8),
                           child: Text(
                             'Kamu belum punya group. Buat/join group dulu untuk task group.',
-                            style: TextStyle(color: Colors.orangeAccent, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.orangeAccent,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                     ],
                     const SizedBox(height: 12),
                     TextField(
                       controller: titleController,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: fieldText),
                       decoration: _inputDecoration('Task title'),
                     ),
                     const SizedBox(height: 12),
@@ -165,19 +187,37 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                       controller: descriptionController,
                       minLines: 2,
                       maxLines: 4,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: fieldText),
                       decoration: _inputDecoration('Description (optional)'),
                     ),
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<TaskPriority>(
+                      DropdownButtonFormField<TaskPriority>(
                       value: selectedPriority,
-                      dropdownColor: const Color(0xFF262626),
+                      dropdownColor: dropdownBg,
                       decoration: _inputDecoration('Priority'),
-                      iconEnabledColor: Colors.white,
-                      items: const [
-                        DropdownMenuItem(value: TaskPriority.low, child: Text('LOW', style: TextStyle(color: Colors.white))),
-                        DropdownMenuItem(value: TaskPriority.medium, child: Text('MEDIUM', style: TextStyle(color: Colors.white))),
-                        DropdownMenuItem(value: TaskPriority.high, child: Text('HIGH', style: TextStyle(color: Colors.white))),
+                      iconEnabledColor: iconColor,
+                      items: [
+                        DropdownMenuItem(
+                          value: TaskPriority.low,
+                          child: Text(
+                            'LOW',
+                            style: TextStyle(color: fieldText),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: TaskPriority.medium,
+                          child: Text(
+                            'MEDIUM',
+                            style: TextStyle(color: fieldText),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: TaskPriority.high,
+                          child: Text(
+                            'HIGH',
+                            style: TextStyle(color: fieldText),
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -188,8 +228,8 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white24),
-                        foregroundColor: Colors.white,
+                        side: BorderSide(color: outline),
+                        foregroundColor: fieldText,
                       ),
                       onPressed: pickDueDate,
                       icon: const Icon(Icons.calendar_month_outlined),
@@ -201,7 +241,10 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                     ),
                     if (validationMessage != null) ...[
                       const SizedBox(height: 12),
-                      Text(validationMessage!, style: const TextStyle(color: Colors.redAccent)),
+                      Text(
+                        validationMessage!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
                     ],
                     const SizedBox(height: 16),
                     SizedBox(
@@ -216,27 +259,36 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                             ? null
                             : () async {
                                 final title = titleController.text.trim();
-                                final description = descriptionController.text.trim();
+                                final description = descriptionController.text
+                                    .trim();
 
                                 if (title.isEmpty) {
-                                  setModalState(() => validationMessage = 'Title wajib diisi.');
+                                  setModalState(
+                                    () => validationMessage =
+                                        'Title wajib diisi.',
+                                  );
                                   return;
                                 }
-                                if (selectedScope == TaskScope.group && selectedGroup == null) {
-                                  setModalState(() => validationMessage = 'Pilih group dulu untuk task group.');
+                                if (selectedScope == TaskScope.group &&
+                                    selectedGroup == null) {
+                                  setModalState(
+                                    () => validationMessage =
+                                        'Pilih group dulu untuk task group.',
+                                  );
                                   return;
                                 }
 
                                 setModalState(() => isSubmitting = true);
                                 try {
-                                  final createdTask = await _taskService.createTask(
-                                    title: title,
-                                    description: description,
-                                    priority: selectedPriority,
-                                    scope: selectedScope,
-                                    groupId: selectedGroup?.id,
-                                    dueDate: selectedDueDate,
-                                  );
+                                  final createdTask = await _taskService
+                                      .createTask(
+                                        title: title,
+                                        description: description,
+                                        priority: selectedPriority,
+                                        scope: selectedScope,
+                                        groupId: selectedGroup?.id,
+                                        dueDate: selectedDueDate,
+                                      );
                                   if (!mounted) return;
                                   setState(() {
                                     _tasks = <TaskItem>[createdTask, ..._tasks];
@@ -244,9 +296,14 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
                                   sheetClosed = true;
                                   Navigator.pop(context, true);
                                 } catch (error) {
-                                  final message = error.toString().replaceFirst('Exception: ', '');
+                                  final message = error.toString().replaceFirst(
+                                    'Exception: ',
+                                    '',
+                                  );
                                   if (!mounted) return;
-                                  setModalState(() => validationMessage = message);
+                                  setModalState(
+                                    () => validationMessage = message,
+                                  );
                                 } finally {
                                   if (!sheetClosed) {
                                     setModalState(() => isSubmitting = false);
@@ -278,18 +335,23 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
     descriptionController.dispose();
 
     if (created == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Task berhasil dibuat.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Task berhasil dibuat.')));
     }
   }
 
   Future<void> _updateStatus(TaskItem task, String status) async {
     try {
-      final updated = await _taskService.updateTaskStatus(taskId: task.id, status: status);
+      final updated = await _taskService.updateTaskStatus(
+        taskId: task.id,
+        status: status,
+      );
       if (!mounted) return;
       setState(() {
-        _tasks = _tasks.map((t) => t.id == task.id ? updated : t).toList(growable: false);
+        _tasks = _tasks
+            .map((t) => t.id == task.id ? updated : t)
+            .toList(growable: false);
       });
     } catch (e) {
       if (!mounted) return;
@@ -324,7 +386,7 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: content,
       floatingActionButton: FloatingActionButton(
         onPressed: _isLoading ? null : _openCreateTaskSheet,
@@ -336,6 +398,10 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
   }
 
   Widget _buildBody() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subColor = isDark ? Colors.white54 : const Color(0xFF64748B);
+
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.cyanAccent),
@@ -349,21 +415,28 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_error!, style: const TextStyle(color: Colors.redAccent), textAlign: TextAlign.center),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: _loadData,
-                child: const Text('Retry'),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.redAccent),
+                textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 10),
+              ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
             ],
           ),
         ),
       );
     }
 
-    final todo = _tasks.where((task) => task.status == 'TODO').toList(growable: false);
-    final inProgress = _tasks.where((task) => task.status == 'IN_PROGRESS').toList(growable: false);
-    final done = _tasks.where((task) => task.status == 'DONE').toList(growable: false);
+    final todo = _tasks
+        .where((task) => task.status == 'TODO')
+        .toList(growable: false);
+    final inProgress = _tasks
+        .where((task) => task.status == 'IN_PROGRESS')
+        .toList(growable: false);
+    final done = _tasks
+        .where((task) => task.status == 'DONE')
+        .toList(growable: false);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -374,27 +447,38 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Tasks',
-                  style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Row(
                   children: [
                     IconButton(
                       onPressed: _loadData,
-                      icon: const Icon(Icons.refresh, color: Colors.white54),
+                      icon: Icon(Icons.refresh, color: subColor),
                     ),
                     IconButton(
                       onPressed: _openCreateTaskSheet,
-                      icon: const Icon(Icons.add_circle_outline, color: Colors.cyanAccent, size: 30),
+                      icon: const Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.cyanAccent,
+                        size: 30,
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
-              child: Text('Buat dan kelola task personal atau group.', style: TextStyle(color: Colors.white54)),
+              child: Text(
+                'Buat dan kelola task personal atau group.',
+                style: TextStyle(color: subColor),
+              ),
             ),
             const SizedBox(height: 20),
             _buildSummaryCard(
@@ -439,36 +523,58 @@ class _TasksScreenState extends State<TasksScreen> with AutomaticKeepAliveClient
     required int inProgress,
     required int done,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: isDark ? Colors.white10 : Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: isDark ? null : Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         children: [
-          _TaskStatRow(label: 'Total Tasks', value: total.toString(), color: const Color(0xFF8E8FFA)),
-          _TaskStatRow(label: 'To Do', value: todo.toString(), color: const Color(0xFFFFB84C)),
-          _TaskStatRow(label: 'In Progress', value: inProgress.toString(), color: const Color(0xFF79E0EE)),
-          _TaskStatRow(label: 'Completed', value: done.toString(), color: const Color(0xFF98D8AA)),
+          _TaskStatRow(
+            label: 'Total Tasks',
+            value: total.toString(),
+            color: const Color(0xFF8E8FFA),
+          ),
+          _TaskStatRow(
+            label: 'To Do',
+            value: todo.toString(),
+            color: const Color(0xFFFFB84C),
+          ),
+          _TaskStatRow(
+            label: 'In Progress',
+            value: inProgress.toString(),
+            color: const Color(0xFF79E0EE),
+          ),
+          _TaskStatRow(
+            label: 'Completed',
+            value: done.toString(),
+            color: const Color(0xFF98D8AA),
+          ),
         ],
       ),
     );
   }
 
   InputDecoration _inputDecoration(String hintText) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hint = isDark ? Colors.white38 : const Color(0xFF64748B);
+    final fill = isDark ? Colors.white10 : const Color(0xFFF8FAFC);
+    final enabled = isDark ? Colors.white12 : const Color(0xFFD1D9E6);
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.white38),
+      hintStyle: TextStyle(color: hint),
       filled: true,
-      fillColor: Colors.white10,
+      fillColor: fill,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white12),
+        borderSide: BorderSide(color: enabled),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -495,9 +601,16 @@ class _TaskSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panel = isDark ? Colors.white.withOpacity(0.04) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final badgeBg = isDark ? Colors.white10 : const Color(0xFFF1F5F9);
+    final badgeText = isDark ? Colors.white70 : const Color(0xFF334155);
+    final emptyColor = isDark ? Colors.white30 : const Color(0xFF94A3B8);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: panel,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accentColor.withOpacity(0.25)),
       ),
@@ -511,26 +624,32 @@ class _TaskSection extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: titleColor,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const Spacer(),
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: Colors.white10,
+                  backgroundColor: badgeBg,
                   child: Text(
                     tasks.length.toString(),
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    style: TextStyle(color: badgeText, fontSize: 11),
                   ),
                 ),
               ],
             ),
           ),
           if (tasks.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(14, 8, 14, 14),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Belum ada task.', style: TextStyle(color: Colors.white30)),
+                child: Text(
+                  'Belum ada task.',
+                  style: TextStyle(color: emptyColor),
+                ),
               ),
             ),
           if (tasks.isNotEmpty)
@@ -551,11 +670,7 @@ class _TaskSection extends StatelessWidget {
 }
 
 class _TaskTile extends StatelessWidget {
-  const _TaskTile({
-    required this.task,
-    this.onStatusChanged,
-    this.onDelete,
-  });
+  const _TaskTile({required this.task, this.onStatusChanged, this.onDelete});
 
   final TaskItem task;
   final Future<void> Function(TaskItem task, String status)? onStatusChanged;
@@ -563,14 +678,21 @@ class _TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? Colors.white54 : const Color(0xFF64748B);
+    final chipText = isDark ? Colors.white70 : const Color(0xFF334155);
+    final tileBg = isDark ? Colors.white10 : const Color(0xFFF8FAFC);
+    final menuIcon = isDark ? Colors.white54 : const Color(0xFF64748B);
     final dueText = task.dueDate == null
         ? 'No deadline'
         : 'Due ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: tileBg,
         borderRadius: BorderRadius.circular(12),
+        border: isDark ? null : Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,12 +702,19 @@ class _TaskTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   task.title,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               PopupMenuButton<String>(
-                color: const Color(0xFF1E1E1E),
-                icon: const Icon(Icons.more_vert, color: Colors.white54, size: 18),
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                icon: Icon(
+                  Icons.more_vert,
+                  color: menuIcon,
+                  size: 18,
+                ),
                 onSelected: (value) {
                   if (value == 'delete') {
                     onDelete?.call(task);
@@ -594,7 +723,10 @@ class _TaskTile extends StatelessWidget {
                   onStatusChanged?.call(task, value);
                 },
                 itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'IN_PROGRESS', child: Text('Set In Progress')),
+                  PopupMenuItem(
+                    value: 'IN_PROGRESS',
+                    child: Text('Set In Progress'),
+                  ),
                   PopupMenuItem(value: 'DONE', child: Text('Set Done')),
                   PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
@@ -602,26 +734,41 @@ class _TaskTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: task.isGroupTask ? Colors.deepPurple.withOpacity(0.35) : Colors.blueGrey.withOpacity(0.35),
+                  color: task.isGroupTask
+                      ? Colors.deepPurple.withOpacity(0.35)
+                      : Colors.blueGrey.withOpacity(0.35),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   task.isGroupTask ? 'GROUP' : 'PERSONAL',
-                  style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: chipText,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           if (task.description.trim().isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(task.description, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(
+              task.description,
+              style: TextStyle(color: chipText, fontSize: 12),
+            ),
           ],
           const SizedBox(height: 8),
           Row(
             children: [
-              Text('Priority: ${task.priority}', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+              Text(
+                'Priority: ${task.priority}',
+                style: TextStyle(color: muted, fontSize: 11),
+              ),
               const SizedBox(width: 12),
-              Text(dueText, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+              Text(
+                dueText,
+                style: TextStyle(color: muted, fontSize: 11),
+              ),
             ],
           ),
         ],
@@ -643,15 +790,21 @@ class _TaskStatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.white70 : const Color(0xFF475569);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white70)),
+          Text(label, style: TextStyle(color: labelColor)),
           Text(
             value,
-            style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

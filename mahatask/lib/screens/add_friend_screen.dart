@@ -49,43 +49,55 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+    final textMuted = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final panel = isDark ? Colors.white10 : const Color(0xFFF1F5F9);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
-        title: const Text('Add friend'),
-      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(title: const Text('Add friend')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Your friend code', style: TextStyle(color: Colors.white70)),
+              Text(
+                'Your friend code',
+                style: TextStyle(color: textMuted),
+              ),
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white10,
+                  color: panel,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   SessionStore.user?.userCode ?? 'N/A',
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 22),
-              const Text('Friend code', style: TextStyle(color: Colors.white70)),
+              Text(
+                'Friend code',
+                style: TextStyle(color: textMuted),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _codeController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Enter friend code',
-                  hintStyle: const TextStyle(color: Colors.white38),
+                  hintStyle: TextStyle(color: textMuted),
                   filled: true,
-                  fillColor: Colors.white10,
+                  fillColor: panel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -110,7 +122,10 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
                         )
                       : const Text('Send Request'),
                 ),
